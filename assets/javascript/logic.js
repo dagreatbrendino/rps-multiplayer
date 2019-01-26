@@ -119,6 +119,7 @@ var clientSelection = function (choice) {
 //function that locks in client choice and sends it to database based on the client's slot
 var sumbitChoice = function () {
     database.ref("/player-" + clientSlot + "/choice").set(clientChoice);
+    compare();
 }
 
 //function that compares the choices of the two players
@@ -149,6 +150,10 @@ var compare = function () {
             player2Score.wins++;
             database.ref("/player-2/wins").set(player2Score.wins);
         }
+        database.ref().child("player-1").child("choice").remove();
+        database.ref().child("player-2").child("choice").remove();
+        player1Choice = undefined
+        player2Choice = undefined
     }
 }
 

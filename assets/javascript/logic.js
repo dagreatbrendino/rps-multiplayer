@@ -13,12 +13,23 @@
 
   var userNames;
   var clientUserName;
+  var slot1;
+  var clientPlaying;
 
-  //function that will grab values from the database
+  //function that will grab usernames from database
   database.ref().on("value",function(snapshot){
       //grabs all the usernames as an array
       userNames = snapshot.val().userNames;
+
   })
+
+  //function that grabs player-1 values from the database
+  database.ref("/player-1").on("value", function(snapshot){
+        //grabs the status of slot 1
+        slot1 = snapshot.val().active;
+        console.log(slot1);
+  })
+
   //function that allows user to choose a user name
   var setUserName = function(name){
     //if the username is not already taken
@@ -35,10 +46,24 @@
 
   //function that allows user to take player-1 slot
   var takeSlot1 = function(){
-
+    //The user is currently playing
+    clientPlaying = true;
+    //update the values in the database
+    database.ref("/player-1").set({
+        active: true, 
+        userName: clientUserName
+    })
   }
 
   //function that removes player from player-1 slot
+  var leaveSlot1 = function(){
+      //The user is no longer playing
+      clientPlaying = false;
+      database.ref("/player-1").set({
+        active: false, 
+        userName: ""
+    })
+  }
 
   //function that allows player-1 to select a choice for the game
 

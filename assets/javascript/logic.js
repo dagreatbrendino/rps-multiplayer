@@ -14,6 +14,8 @@
   var userNames;
   var clientUserName;
   var slot1;
+  var clientSlot;
+  var clientChoice;
   var clientPlaying;
 
   //function that will grab usernames from database
@@ -45,9 +47,10 @@
   }
 
   //function that allows user to take player-1 slot
-  var takeSlot1 = function(){
+  var occupySlot1 = function(){
     //The user is currently playing
     clientPlaying = true;
+    clientSlot = 1;
     //update the values in the database
     database.ref("/player-1").set({
         active: true, 
@@ -65,8 +68,13 @@
     })
   }
 
-  //function that allows player-1 to select a choice for the game
+  //function that allows client to select a choice
+  var clientSelection = function(choice){
+      clientChoice = choice;
+  }
 
-  //function that locks in player-1 choice
-
+  //function that locks in client choice and sends it to database based on the client's slot
+  var sumbitChoice = function(){
+        database.ref("/player-" + clientSlot + "/choice").set(clientChoice);
+  }
 

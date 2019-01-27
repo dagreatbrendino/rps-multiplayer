@@ -15,9 +15,11 @@ var userNames;
 var clientUserName;
 var slot1;
 var slot2;
-var clientSlot;
+var clientSlot =0;
 var clientChoice;
-var clientPlaying;
+var clientPlaying =false;
+var player1Name;
+var player2Name;
 var player1Choice;
 var player2Choice;
 var player1Score= {wins: 0, losses: 0, ties: 0};
@@ -27,30 +29,88 @@ var player2Score= {wins: 0, losses: 0, ties: 0}
 database.ref().on("value", function (snapshot) {
     //grabs all the usernames as an array
     userNames = snapshot.val().userNames;
-
 })
 
 //function that grabs player-1 values from the database
 database.ref("/player-1").on("value", function (snapshot) {
     //grabs the status of slot 1
     slot1 = snapshot.val().active;
+
+    //if the slot is already taken, the occupy slot function cannot be called
+    if (slot1){
+        $("#slot-1-join").attr("disabled","disabled");
+    }
+    else{
+        $("#slot-1-join").removeAttr("disabled");
+    }
+    //the player can only call the leave slot if they are playing
+    if(clientPlaying && clientSlot === 1){
+        $("#slot-1-leave").removeAttr("disabled");
+    }
+    else{
+        $("#slot-1-leave").attr("disabled","disabled");
+    }
     console.log(player1Choice);
     console.log(slot1);
+    //grab player1's username from database and add it dom
+    player1Name = snapshot.val().userName;
+    $("#player-1-name").text(player1Name);
+
     if (snapshot.child("choice").exists()){
         player1Choice = snapshot.val().choice;
         console.log(player1Choice);
     }
-})
+});
 database.ref("/player-2").on("value", function (snapshot) {
     //grabs the status of slot 1
     slot2 = snapshot.val().active;
+    if (slot2){
+        $("#slot-2-join").attr("disabled","disabled");
+    }
+    else{
+        $("#slot-2-join").removeAttr("disabled");
+    }
+    //the player can only call the leave slot function if they are playing
+    if(clientPlaying && clientSlot === 2){
+        $("#slot-2-leave").removeAttr("disabled");
+    }
+    else{
+        $("#slot-2-leave").attr("disabled","disabled");
+    }
     console.log(player2Choice);
     console.log(slot2);
+    //grab player2's username from database and add it dom
+    player2Name = snapshot.val().userName;
+    $("#player-2-name").text(player2Name);
+
     if (snapshot.child("choice").exists()){
         player2Choice = snapshot.val().choice;
         console.log(player2Choice);
     }
-})
+});
+// connectionsRef references a specific location in our database.
+// All of our connections will be stored in this directory.
+var connectionsRef = database.ref("/connections");
+// '.info/connected' is a special location provided by Firebase that is updated
+// every time the client's connection state changes.
+// '.info/connected' is a boolean value, true if the client is connected and false if they are not.
+var connectedRef = database.ref(".info/connected");
+
+// When the client's connection state changes...
+connectedRef.on("value", function(snap) {
+    console.log("snapval():",snap.val());
+  // If they are connected..
+  if (snap.val()) {
+    // Add user to the connections list.
+    var con = connectionsRef.push([true, clientSlot]);
+    console.log("connections",con);
+    // console.log(firebase.ref())
+    // console.log(database.ref("/connections").once("value"));
+    console.log("snapval20():",snap.val());
+    // Remove user from the connection list when they disconnect.
+    con.onDisconnect().set([false,clientSlot]);
+  };
+});
 
 //function that allows user to choose a user name
 var setUserName = function (name) {
@@ -76,6 +136,7 @@ var occupySlot1 = function () {
         active: true,
         userName: clientUserName
     })
+    connectionsRef.set([true,clientSlot]);
 }
 
 //function that removes player from player-1 slot
@@ -150,6 +211,7 @@ var compare = function () {
             player2Score.wins++;
             database.ref("/player-2/wins").set(player2Score.wins);
         }
+        //resetting the player choices
         database.ref().child("player-1").child("choice").remove();
         database.ref().child("player-2").child("choice").remove();
         player1Choice = undefined

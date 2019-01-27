@@ -18,12 +18,22 @@ var slot2;
 var clientSlot =0;
 var clientChoice;
 var clientPlaying =false;
+var player1 = {
+    active: false,
+    name: "",
+    choice: "",
+    wins: 0,
+    ties: 0,
+    losses: 0,
+}
 var player1Name;
 var player2Name;
 var player1Choice;
 var player2Choice;
 var player1Score= {wins: 0, losses: 0, ties: 0};
-var player2Score= {wins: 0, losses: 0, ties: 0}
+var player2Score= {wins: 0, losses: 0, ties: 0};
+var userNum = 0;
+var connections = []
 
 //function that will grab usernames from database
 database.ref().on("value", function (snapshot) {
@@ -35,6 +45,8 @@ database.ref().on("value", function (snapshot) {
 database.ref("/player-1").on("value", function (snapshot) {
     //grabs the status of slot 1
     slot1 = snapshot.val().active;
+
+    player1.name = snapshot.val().userName;
 
     //if the slot is already taken, the occupy slot function cannot be called
     if (slot1){
@@ -98,18 +110,46 @@ var connectedRef = database.ref(".info/connected");
 
 // When the client's connection state changes...
 connectedRef.on("value", function(snap) {
-    console.log("snapval():",snap.val());
   // If they are connected..
   if (snap.val()) {
     // Add user to the connections list.
-    var con = connectionsRef.push([true, clientSlot]);
+    var con = connectionsRef.push([true, "name-not-set"]);
+    connections = con;
     console.log("connections",con);
     // console.log(firebase.ref())
     // console.log(database.ref("/connections").once("value"));
     console.log("snapval20():",snap.val());
     // Remove user from the connection list when they disconnect.
-    con.onDisconnect().set([false,clientSlot]);
+    con.onDisconnect().remove();
+
   };
+});
+var lastKey;
+connectionsRef.limitToLast(1).once('child_added', function(childSnapshot){
+    lastKey = childSnapshot.key;
+    console.log(lastKey);
+});
+
+connectionsRef.on("value", function(snap) {
+    console.log("num children: ", snap.numChildren());
+    // Display the viewer count in the html.
+    // The number of online users is the number of children in the connections list.
+    var userFound = false;
+    snap.forEach(function(childSnap){
+        console.log(childSnap.val());
+        var userInfo = childSnap.val();
+        if (userInfo[1] == player1.name){
+            userFound = true;
+        }
+        console.log("user found: ", userFound);
+        // if(player1.name)
+    });
+    if (!userFound){
+        leaveSlot1();
+    }
+    if (userNum === 0){
+        userNum = snap.numChildren();
+    }
 });
 
 //function that allows user to choose a user name
@@ -124,6 +164,7 @@ var setUserName = function (name) {
         //update the usernames array in the databse
         database.ref("userNames").set(userNames);
     }
+    database.ref("/connections/" + lastKey).set([true, clientUserName]);
 }
 
 //function that allows user to take player-1 slot
@@ -131,12 +172,12 @@ var occupySlot1 = function () {
     //The user is currently playing
     clientPlaying = true;
     clientSlot = 1;
+    console.log(database.ref("/connections/"+lastKey));
     //update the values in the database
     database.ref("/player-1").set({
         active: true,
         userName: clientUserName
-    })
-    connectionsRef.set([true,clientSlot]);
+    });
 }
 
 //function that removes player from player-1 slot

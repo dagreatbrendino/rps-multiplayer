@@ -11,7 +11,7 @@ firebase.initializeApp(config);
 
 database = firebase.database();
 
-var userNames;
+var players =[];
 var clientUserName;
 var slot1;
 var slot2;
@@ -25,6 +25,14 @@ var player1 = {
     wins: 0,
     ties: 0,
     losses: 0,
+}
+var player2= {
+    active: false,
+    name: "",
+    choice: "",
+    wins: 0,
+    ties: 0,
+    losses: 0
 }
 var player1Name;
 var player2Name;
@@ -47,7 +55,14 @@ database.ref("/player-1").on("value", function (snapshot) {
     slot1 = snapshot.val().active;
 
     player1.name = snapshot.val().userName;
-
+    console.log("checkin if player is in list");
+    if (!players.includes(player1.name)){
+        console.log("not in players");
+        database.ref("/player-1").set({
+            active: false,
+            userName: ""
+        })
+    }
     //if the slot is already taken, the occupy slot function cannot be called
     if (slot1){
         $("#slot-1-join").attr("disabled","disabled");
@@ -62,11 +77,8 @@ database.ref("/player-1").on("value", function (snapshot) {
     else{
         $("#slot-1-leave").attr("disabled","disabled");
     }
-    console.log(player1Choice);
-    console.log(slot1);
     //grab player1's username from database and add it dom
-    player1Name = snapshot.val().userName;
-    $("#player-1-name").text(player1Name);
+    $("#player-1-name").text(player1.name);
 
     if (snapshot.child("choice").exists()){
         player1Choice = snapshot.val().choice;
@@ -76,6 +88,16 @@ database.ref("/player-1").on("value", function (snapshot) {
 database.ref("/player-2").on("value", function (snapshot) {
     //grabs the status of slot 1
     slot2 = snapshot.val().active;
+
+    player2.name = snapshot.val().userName;
+    if (!players.includes(player2.name)){
+        console.log("not in players");
+        database.ref("/player-2").set({
+            active: false,
+            userName: ""
+        })
+    }
+    //this enables and disables buttons for the clients based on if there are already players in the slots
     if (slot2){
         $("#slot-2-join").attr("disabled","disabled");
     }
@@ -92,8 +114,7 @@ database.ref("/player-2").on("value", function (snapshot) {
     console.log(player2Choice);
     console.log(slot2);
     //grab player2's username from database and add it dom
-    player2Name = snapshot.val().userName;
-    $("#player-2-name").text(player2Name);
+    $("#player-2-name").text(player2.name);
 
     if (snapshot.child("choice").exists()){
         player2Choice = snapshot.val().choice;
@@ -134,22 +155,29 @@ connectionsRef.on("value", function(snap) {
     console.log("num children: ", snap.numChildren());
     // Display the viewer count in the html.
     // The number of online users is the number of children in the connections list.
-    var userFound = false;
+    var player1Found = false;
+    var player2Found = false
+    players = [];
     snap.forEach(function(childSnap){
         console.log(childSnap.val());
         var userInfo = childSnap.val();
-        if (userInfo[1] == player1.name){
-            userFound = true;
-        }
-        console.log("user found: ", userFound);
+        players.push(userInfo[1]);
+        // if (userInfo[1] == player1.name){
+        //     player1Found = true;
+        // }
+        // if (userInfo[1] = player2.name) {
+        //     player2Found = true;
+        // }
         // if(player1.name)
     });
-    if (!userFound){
-        leaveSlot1();
-    }
-    if (userNum === 0){
-        userNum = snap.numChildren();
-    }
+    database.ref("/player-1/con").set("any");
+    database.ref("/player-2/con").set("any");
+    // if (!player1Found){
+    //     leaveSlot1();
+    // }
+    // if (!player2Found){
+    //     leaveSlot2();
+    // }
 });
 
 //function that allows user to choose a user name
@@ -188,7 +216,7 @@ var leaveSlot1 = function () {
     database.ref("/player-1").set({
         active: false,
         userName: ""
-    })
+    });
 }
 //function that allows user to take player-1 slot
 var occupySlot2 = function () {

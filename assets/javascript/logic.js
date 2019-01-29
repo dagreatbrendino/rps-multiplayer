@@ -52,19 +52,17 @@ database.ref().on("value", function (snapshot) {
 //function that grabs player-1 values from the database
 database.ref("/player-1").on("value", function (snapshot) {
     //grabs the status of slot 1
-    slot1 = snapshot.val().active;
+   
 
     player1.name = snapshot.val().userName;
     console.log("checkin if player is in list");
-    if (!players.includes(player1.name)){
-        console.log("not in players");
-        database.ref("/player-1").set({
-            active: false,
-            userName: ""
-        })
-    }
+    
+
     //if the slot is already taken, the occupy slot function cannot be called
-    if (slot1){
+    player1.active = snapshot.val().active;
+
+    console.log("player 1 active ",player1.active );
+    if (player1.active){
         $("#slot-1-join").attr("disabled","disabled");
     }
     else{
@@ -84,21 +82,25 @@ database.ref("/player-1").on("value", function (snapshot) {
         player1Choice = snapshot.val().choice;
         console.log(player1Choice);
     }
+    if (!players.includes(player1.name)){
+        console.log("not in players");
+        player1.active = false;
+        database.ref("/player-1").set({
+            active: false,
+            userName: ""
+        })
+    }
+
 });
 database.ref("/player-2").on("value", function (snapshot) {
     //grabs the status of slot 1
     slot2 = snapshot.val().active;
 
     player2.name = snapshot.val().userName;
-    if (!players.includes(player2.name)){
-        console.log("not in players");
-        database.ref("/player-2").set({
-            active: false,
-            userName: ""
-        })
-    }
+
+    player2.active = snapshot.val().active;
     //this enables and disables buttons for the clients based on if there are already players in the slots
-    if (slot2){
+    if (player2.active){
         $("#slot-2-join").attr("disabled","disabled");
     }
     else{
@@ -119,6 +121,13 @@ database.ref("/player-2").on("value", function (snapshot) {
     if (snapshot.child("choice").exists()){
         player2Choice = snapshot.val().choice;
         console.log(player2Choice);
+    }
+    if (!players.includes(player2.name)){
+        console.log("not in players");
+        database.ref("/player-2").set({
+            active: false,
+            userName: ""
+        })
     }
 });
 // connectionsRef references a specific location in our database.
